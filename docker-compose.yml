@@ -1,0 +1,42 @@
+version: '3.1'
+services:
+    nginx:
+        image: nginx:latest
+        container_name: nginx
+        depends_on:
+            - flask
+        volumes:
+            - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+            - ./nginx/privkey.pem:/etc/ssl/private/privkey.pem
+            - ./nginx/certificate.pem:/etc/ssl/certs/certificate.pem
+        networks:
+            - my-network
+        ports:
+            - 80:80
+            - 443:443
+    flask:
+        build:
+            context: ./
+            dockerfile: Dockerfile
+        image: imager:0.1.1
+        container_name: flask
+        volumes:
+            - ./imager:/imager/
+        environment:
+            - FLASK_APP=/imager/main.py
+            - S3_BUCKET=<Bucket Name, e.g.;my-test.example.com>
+            - S3_OBJECT_PREFIX=<e.g.; https://s3.ap-south-1.amazonaws.com/>
+            - PROXY_HOST=<e.g. localhost/DNS>
+            - CLOUDFRONT_ORIGIN=<e.g. https://data.example.com/loans/>
+            - ACCESS_KEY=${ACCESS_KEY}
+            - SECRET_KEY=${SECRET_KEY}
+        command: flask run --host=0.0.0.0
+        networks:
+            my-network:
+                aliases:
+                    - imager-app
+        ports:
+            - 8080:5000
+
+networks:
+    my-network:
